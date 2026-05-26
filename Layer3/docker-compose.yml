@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+
+  rag:
+    build:
+      context: ./RAG
+      dockerfile: Dockerfile
+    container_name: agritriage-rag
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./RAG/chroma_db:/app/chroma_db          # persist vector index
+      - ../data:/data:ro                         # read-only access to CSVs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # Ollama runs on the host — containers reach it via host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Uncomment once best_model.pth is trained:
+  # image-analyzer:
+  #   build:
+  #     context: ./ImageAnalyzer
+  #     dockerfile: Dockerfile
+  #   container_name: agritriage-image-analyzer
+  #   ports:
+  #     - "8002:8002"
+  #   volumes:
+  #     - ./ImageAnalyzer/best_model.pth:/app/best_model.pth:ro
+  #     - ../data:/data:ro
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   restart: unless-stopped
