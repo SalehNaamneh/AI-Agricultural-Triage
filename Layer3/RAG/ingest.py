@@ -12,7 +12,7 @@ PRODUCTS_CSV = DATA_DIR / "onion_spray_products.csv"
 CHROMA_PATH = Path(__file__).parent / "chroma_db"
 COLLECTION_NAME = "onion_agriculture"
 
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 
 
 def _read_csv(path: Path) -> list[dict]:
@@ -23,6 +23,7 @@ def _read_csv(path: Path) -> list[dict]:
 
 def _disease_to_text(row: dict) -> str:
     return (
+        # English
         f"Disease: {row['disease_name_en']} ({row['scientific_name']})\n"
         f"Pathogen type: {row['pathogen_type_en']}\n"
         f"Description: {row['description_en']}\n"
@@ -31,14 +32,23 @@ def _disease_to_text(row: dict) -> str:
         f"Favorable conditions: {row['favorable_conditions_en']}\n"
         f"Prevention: {row['agronomic_prevention_en']}\n"
         f"Spray season (Israel): {row['spray_season_israel']}\n"
-        f"Confusion risk: {row['confusion_risk_en']}"
+        f"Confusion risk: {row['confusion_risk_en']}\n"
+        # Hebrew
+        f"מחלה: {row['disease_name_he']}\n"
+        f"תיאור: {row['description_he']}\n"
+        f"תסמינים חזותיים: {row['visual_symptoms_he']}\n"
+        f"סימן אבחנתי: {row['diagnostic_sign_he']}\n"
+        f"תנאים מעדיפים: {row['favorable_conditions_he']}\n"
+        f"מניעה: {row['agronomic_prevention_he']}\n"
+        f"סיכון בלבול: {row['confusion_risk_he']}"
     )
 
 
 def _product_to_text(row: dict) -> str:
     return (
+        # English
         f"Treatment for: {row['disease_name_en']}\n"
-        f"Product: {row['product_name_en']} (Hebrew: {row['product_name_he']})\n"
+        f"Product: {row['product_name_en']}\n"
         f"Active ingredient: {row['active_ingredient_en']}\n"
         f"FRAC code: {row['frac_code']}\n"
         f"Chemical group: {row['chemical_group_en']}\n"
@@ -46,7 +56,13 @@ def _product_to_text(row: dict) -> str:
         f"Dose per dunam: {row['dose_per_dunam']}\n"
         f"Spray season: {row['spray_season_israel']}\n"
         f"Mode of action: {row['mode_of_action_en']}\n"
-        f"Resistance warning: {row['resistance_warning']}"
+        f"Resistance warning: {row['resistance_warning']}\n"
+        # Hebrew
+        f"טיפול עבור: {row['disease_name_he']}\n"
+        f"תכשיר: {row['product_name_he']}\n"
+        f"חומר פעיל: {row['active_ingredient_he']}\n"
+        f"קבוצה כימית: {row['chemical_group_he']}\n"
+        f"אופן פעולה: {row['mode_of_action_he']}"
     )
 
 
