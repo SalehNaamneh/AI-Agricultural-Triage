@@ -3,7 +3,7 @@ from pathlib import Path
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-from ingest import CHROMA_PATH, COLLECTION_NAME, EMBEDDING_MODEL, build_index
+from ingest import CHROMA_PATH, COLLECTION_NAME, EMBEDDING_MODEL, build_index  # noqa: F401
 
 
 def get_collection() -> chromadb.Collection:
