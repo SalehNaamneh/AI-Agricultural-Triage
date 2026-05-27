@@ -1,0 +1,83 @@
+version: "3.9"
+
+# EC2 deployment — pulls pre-built images from Docker Hub (no GPU required)
+# Usage:
+#   docker compose -f docker-compose.ec2.yml pull
+#   docker compose -f docker-compose.ec2.yml up -d
+
+services:
+
+  rag:
+    image: salehnaa/agritriage-rag:latest
+    container_name: agritriage-rag
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  agent:
+    image: salehnaa/agritriage-agent:latest
+    container_name: agritriage-agent
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
+      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  guardrails:
+    image: salehnaa/agritriage-guardrails:latest
+    container_name: agritriage-guardrails
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  image-analyzer:
+    image: salehnaa/agritriage-image-analyzer:latest
+    container_name: agritriage-image-analyzer
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
