@@ -26,6 +26,37 @@ services:
       retries: 3
       start_period: 20s
 
+  agent:
+    build:
+      context: ..
+      dockerfile: Layer3/agent/Dockerfile
+    container_name: agritriage-agent
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
+      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
   image-analyzer:
     build:
       context: ..                          # project root
