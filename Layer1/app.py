@@ -1,13 +1,16 @@
+import io
 import sys
 import requests
 import gradio as gr
 from pathlib import Path
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from crop_config import load_all_crops, CropConfig
 
 RAG_URL            = "http://localhost:8000"
 IMAGE_ANALYZER_URL = "http://localhost:8002"
+N8N_WEBHOOK_URL    = "http://localhost:5678/webhook/agritriage"
 
 ALL_CROPS = load_all_crops()
 DEFAULT_CROP = next(iter(ALL_CROPS)) if ALL_CROPS else None
@@ -239,6 +242,50 @@ def clear_chat():
     return [{"role": "assistant", "content": WELCOME}]
 
 
+# ─── Form Submission (n8n webhook) ───────────────────────────────────────────
+def submit_form(text: str, image, crop_id: str) -> str:
+    if not text.strip() and image is None:
+        return '<div dir="rtl" style="color:#c1121f;padding:16px">⚠️ יש להזין תיאור או לצרף תמונה.</div>'
+
+    payload: dict = {"text": text.strip(), "crop_id": crop_id}
+
+    if image is not None:
+        buf = io.BytesIO()
+        img = Image.fromarray(image) if not isinstance(image, Image.Image) else image
+        img.save(buf, format="JPEG")
+        import base64
+        payload["image_base64"] = base64.b64encode(buf.getvalue()).decode()
+
+    try:
+        r = requests.post(N8N_WEBHOOK_URL, json=payload, timeout=120)
+        if r.ok:
+            data    = r.json()
+            report  = data.get("report", "")
+            warnings = data.get("warnings", [])
+            warn_html = ""
+            if warnings:
+                items = "".join(f"<li>{w}</li>" for w in warnings)
+                warn_html = f'<ul style="color:#856404;margin:8px 0 0;font-size:13px">{items}</ul>'
+            return (
+                f'<div dir="rtl" style="background:#f0faf5;border-radius:14px;padding:20px;'
+                f'border-left:5px solid #2d6a4f">'
+                f'<div style="white-space:pre-wrap;line-height:1.8;color:#1b4332">{report}</div>'
+                f'{warn_html}</div>'
+            )
+        else:
+            return (
+                f'<div dir="rtl" style="color:#c1121f;padding:16px">'
+                f'⚠️ שגיאה מהשרת: {r.status_code}<br><code>{r.text[:400]}</code></div>'
+            )
+    except Exception as exc:
+        return (
+            f'<div dir="rtl" style="color:#c1121f;padding:16px">'
+            f'⚠️ לא ניתן להתחבר לשרת n8n.<br>'
+            f'ודא ש-n8n פועל ו-<code>N8N_WEBHOOK_URL</code> נכון.<br>'
+            f'<code>{exc}</code></div>'
+        )
+
+
 # ─── CSS ──────────────────────────────────────────────────────────────────────
 CSS = """
 * { box-sizing: border-box; }
@@ -358,6 +405,46 @@ with gr.Blocks(title="AgriTriage AI") as demo:
 
             detail_panel = gr.HTML(value=PLACEHOLDER, elem_id="disease-detail")
             gallery.select(on_gallery_select, [gallery_map_state], [detail_panel])
+
+        # ── Tab 3: Form Submission ────────────────────────────────────────────
+        with gr.Tab("📋 שליחת דיווח"):
+
+            gr.HTML(
+                '<div dir="rtl" style="background:#fff8e1;border-radius:12px;padding:12px 16px;'
+                'margin-bottom:8px;font-size:13px;color:#e65100;border:1px solid #ffe082">'
+                '📡 דיווח זה נשלח לשרת n8n ומעובד על ידי כל שכבות המערכת (Guard → AI Agent → Report → Guard).'
+                '</div>'
+            )
+
+            with gr.Row():
+                with gr.Column(scale=2):
+                    form_text = gr.Textbox(
+                        label="תיאור הבעיה",
+                        placeholder="תאר את התסמינים שנצפו — צבע, צורה, מיקום על הצמח...",
+                        lines=4,
+                        rtl=True,
+                    )
+                    form_image = gr.Image(
+                        label="תמונת הצמח (אופציונלי)",
+                        type="numpy",
+                        sources=["upload"],
+                    )
+                    submit_btn = gr.Button("🚀 שלח לניתוח", variant="primary")
+
+                with gr.Column(scale=3):
+                    form_output = gr.HTML(
+                        value='<div dir="rtl" style="padding:32px;text-align:center;color:#aaa;'
+                              'border:2px dashed #d8f3dc;border-radius:16px">'
+                              '<div style="font-size:40px;margin-bottom:8px">🌾</div>'
+                              '<div>התוצאות יופיעו כאן לאחר שליחת הדיווח</div></div>',
+                        label="תוצאת הניתוח",
+                    )
+
+            submit_btn.click(
+                submit_form,
+                inputs=[form_text, form_image, crop_state],
+                outputs=[form_output],
+            )
 
     # ── Crop change wires both tabs ───────────────────────────────────────────
     crop_dropdown.change(

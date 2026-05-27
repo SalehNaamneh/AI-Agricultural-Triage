@@ -2,11 +2,13 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import base64
 import io
 import torch
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+from pydantic import BaseModel
 
 from crop_config import load_all_crops
 from predict import predict_pil
@@ -48,6 +50,26 @@ async def predict(
         data  = await file.read()
         image = Image.open(io.BytesIO(data)).convert("RGB")
         return predict_pil(image, crop_id=crop)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PredictB64Request(BaseModel):
+    image_base64: str
+    crop_id: str = "onion"
+
+
+@app.post("/predict-b64")
+async def predict_b64(req: PredictB64Request):
+    """JSON endpoint for n8n agent tool — accepts base64-encoded image."""
+    if req.crop_id not in _crops:
+        raise HTTPException(status_code=400, detail=f"Unknown crop '{req.crop_id}'")
+    try:
+        raw   = base64.b64decode(req.image_base64)
+        image = Image.open(io.BytesIO(raw)).convert("RGB")
+        return predict_pil(image, crop_id=req.crop_id)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

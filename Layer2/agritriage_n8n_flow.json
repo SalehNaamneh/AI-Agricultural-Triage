@@ -1,0 +1,473 @@
+{
+  "name": "AgriTriage — Main Orchestration Flow",
+  "meta": {
+    "instanceId": "agritriage-instance",
+    "templateCredsSetupCompleted": false
+  },
+  "nodes": [
+
+    {
+      "id": "f1a2b3c4-0001-4000-a000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "agritriage-webhook-trigger",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agritriage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "Entry point — accepts POST from Gradio form or any HTTP client.\n\nExpected body: { \"text\": \"...\", \"crop_id\": \"onion|tomato|wheat\", \"image_base64\": \"...\" (optional) }"
+    },
+
+    {
+      "id": "f1a2b3c4-0002-4000-a000-000000000002",
+      "name": "Guard — Check Input",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://YOUR_EC2_IP:8003/check-input",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ \"text\": $json.body.text }) }}",
+        "options": {
+          "response": { "response": { "fullResponse": false } }
+        }
+      },
+      "notes": "CONFIGURE: Replace YOUR_EC2_IP with your actual EC2 instance public IP.\nReturns: { passed: bool, reason: string, message_he: string }"
+    },
+
+    {
+      "id": "f1a2b3c4-0003-4000-a000-000000000003",
+      "name": "IF — Input Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-pass",
+              "leftValue": "={{ $json.passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equal" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "f1a2b3c4-0004-4000-a000-000000000004",
+      "name": "Respond — Rejection",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 480],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ \"error\": true, \"message_he\": $json.message_he, \"reason\": $json.reason }) }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": "f1a2b3c4-0005-4000-a000-000000000005",
+      "name": "Info Extractor",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1,
+      "position": [960, 180],
+      "parameters": {
+        "text": "={{ $('Webhook').item.json.body.text }}",
+        "schemaType": "manual",
+        "inputSchema": "",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "crop_id",
+              "type": "string",
+              "required": true,
+              "description": "The crop type (e.g., onion, tomato, wheat, potato). Infer from context if not explicit."
+            },
+            {
+              "name": "symptoms",
+              "type": "string",
+              "required": true,
+              "description": "Main symptoms described — colour changes, lesions, wilting, etc."
+            },
+            {
+              "name": "severity",
+              "type": "string",
+              "required": false,
+              "description": "Severity: mild | moderate | severe. Infer from description."
+            },
+            {
+              "name": "has_image",
+              "type": "boolean",
+              "required": false,
+              "description": "True if the user provided an image with their report."
+            }
+          ]
+        }
+      },
+      "notes": "Extracts structured metadata from free-text user input. Feeds into AI Agent."
+    },
+
+    {
+      "id": "f1a2b3c4-0005-4000-a000-000000000015",
+      "name": "Gemini — Info LM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [960, 380],
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": { "temperature": 0 }
+      },
+      "credentials": { "googlePalmApi": { "id": "REPLACE_WITH_GEMINI_CREDENTIAL_ID", "name": "Google Gemini account" } }
+    },
+
+    {
+      "id": "f1a2b3c4-0006-4000-a000-000000000006",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1220, 180],
+      "parameters": {
+        "agentType": "toolsAgent",
+        "text": "={{ 'Crop: ' + $json.output.crop_id + '\\nSymptoms: ' + $json.output.symptoms + '\\nSeverity: ' + ($json.output.severity || 'unknown') + '\\nUser question: ' + $('Webhook').item.json.body.text + ($('Webhook').item.json.body.image_base64 ? '\\n[Image attached — use Image Analyzer tool]' : '') }}",
+        "systemMessage": "אתה AgriTriage AI — מומחה לאבחון מחלות גידולים חקלאיים.\n\nתפקידך:\n1. לאבחן מחלות גידולים על בסיס תסמינים ותמונות\n2. להמליץ על טיפולים ספציפיים (שם תכשיר, מינון, קוד FRAC)\n3. להזהיר מפני עמידות — חובה לציין אם קיימת\n\nכלים שברשותך:\n- rag_query: שאל את מאגר הידע על מחלות וטיפולים\n- image_analyze: נתח תמונת צמח לזיהוי מחלה (השתמש רק אם צורף base64)\n- agent_chat: שאל את ה-LangGraph Agent לניתוח מעמיק\n\nכללים:\n- ענה תמיד בעברית\n- אל תמציא תכשירים או מינונים שאינם במאגר\n- השתמש ב-rag_query לכל שאלה על טיפולים\n- אם הבטחון בזיהוי < 50% — הזהר את המשתמש\n- סיים תמיד עם המלצת מניעה\n\nמבנה תשובה נדרש:\n1. מחלה שזוהתה\n2. תסמינים עיקריים\n3. טיפול מומלץ (תכשיר + מינון + FRAC)\n4. אזהרת עמידות (אם קיימת)\n5. מניעה לעונה הבאה",
+        "options": {
+          "maxIterations": 5,
+          "returnIntermediateSteps": false
+        }
+      },
+      "notes": "Core orchestrator. Uses 3 tools: RAG (knowledge), ImageAnalyzer (CNN), LangGraph (deep reasoning)."
+    },
+
+    {
+      "id": "f1a2b3c4-0006-4000-a000-000000000016",
+      "name": "GPT-4o — Agent LM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1100, 380],
+      "parameters": {
+        "model": "gpt-4o",
+        "options": { "temperature": 0.2, "maxTokens": 2048 }
+      },
+      "credentials": { "openAiApi": { "id": "REPLACE_WITH_OPENAI_CREDENTIAL_ID", "name": "OpenAi account" } },
+      "notes": "Swap model to 'gemini-2.0-flash' and switch to lmChatGoogleGemini to avoid OpenAI costs."
+    },
+
+    {
+      "id": "f1a2b3c4-0006-4000-a000-000000000017",
+      "name": "Tool — RAG Service",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1220, 380],
+      "parameters": {
+        "name": "rag_query",
+        "description": "Query the agricultural RAG knowledge base for disease information, treatment products, FRAC codes, and dosages. Use for any question about specific diseases, symptoms, or treatments.",
+        "method": "POST",
+        "url": "http://YOUR_EC2_IP:8000/ask",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ \"question\": $fromAI(\"question\", \"The agricultural disease or treatment question to look up\") }) }}",
+        "options": {}
+      },
+      "notes": "CONFIGURE: Replace YOUR_EC2_IP. This calls Layer3/RAG (port 8000)."
+    },
+
+    {
+      "id": "f1a2b3c4-0006-4000-a000-000000000018",
+      "name": "Tool — Image Analyzer",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1340, 380],
+      "parameters": {
+        "name": "image_analyze",
+        "description": "Analyze a plant image to identify disease using CNN (EfficientNet-B0). Use ONLY when the user attached an image. Returns disease class, confidence, and health score.",
+        "method": "POST",
+        "url": "http://YOUR_EC2_IP:8002/predict-b64",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ \"image_base64\": $fromAI(\"image_base64\", \"Base64-encoded image from the webhook payload\"), \"crop_id\": $fromAI(\"crop_id\", \"Crop type: onion|tomato|wheat\") }) }}",
+        "options": {}
+      },
+      "notes": "CONFIGURE: Replace YOUR_EC2_IP. This calls Layer3/ImageAnalyzer (port 8002) on /predict-b64 endpoint."
+    },
+
+    {
+      "id": "f1a2b3c4-0006-4000-a000-000000000019",
+      "name": "Tool — LangGraph Agent",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1460, 380],
+      "parameters": {
+        "name": "agent_chat",
+        "description": "Call the LangGraph 5-node agent for deep reasoning — combines RAG retrieval with CNN predictions and multi-step planning. Use for complex cases requiring comprehensive analysis.",
+        "method": "POST",
+        "url": "http://YOUR_EC2_IP:8001/chat",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ \"question\": $fromAI(\"question\", \"The detailed agricultural question for deep analysis\"), \"crop_id\": $fromAI(\"crop_id\", \"Crop type: onion|tomato|wheat\"), \"image_base64\": $fromAI(\"image_base64\", \"Optional base64 image\", \"string\", \"\") }) }}",
+        "options": {}
+      },
+      "notes": "CONFIGURE: Replace YOUR_EC2_IP. This calls Layer3/Agent (port 8001) — the LangGraph StateGraph."
+    },
+
+    {
+      "id": "f1a2b3c4-0007-4000-a000-000000000007",
+      "name": "LLM Chain — Report",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1500, 180],
+      "parameters": {
+        "prompt": {
+          "values": [
+            {
+              "type": "human",
+              "message": "=אתה עוזר חקלאי. על בסיס ניתוח הסוכן שלהלן, כתוב דוח מסכם מובנה בעברית.\n\nנתוני הקלט:\n- גידול: {{ $('Info Extractor').item.json.output.crop_id }}\n- תסמינים: {{ $('Info Extractor').item.json.output.symptoms }}\n- חומרה: {{ $('Info Extractor').item.json.output.severity || 'לא צוין' }}\n\nפלט הסוכן:\n{{ $json.output }}\n\nכתוב דוח מסכם הכולל:\n1. **אבחנה**: מחלה, גורם, רמת ודאות\n2. **תסמינים עיקריים**: רשימה קצרה\n3. **טיפול מיידי**: תכשיר + מינון + קוד FRAC\n4. **אזהרת עמידות**: סבב תכשירים מומלץ (אם רלוונטי)\n5. **מניעה**: המלצות לעונה הבאה\n6. **דחיפות**: נמוכה / בינונית / גבוהה\n\nסיים ב: 💡 המידע מבוסס על מסד הנתונים החקלאי של AgriTriage."
+            }
+          ]
+        }
+      },
+      "notes": "Synthesizes agent output into a clean, structured Hebrew report."
+    },
+
+    {
+      "id": "f1a2b3c4-0007-4000-a000-000000000020",
+      "name": "Gemini — Chain LM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [1500, 380],
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": { "temperature": 0.3, "maxOutputTokens": 2048 }
+      },
+      "credentials": { "googlePalmApi": { "id": "REPLACE_WITH_GEMINI_CREDENTIAL_ID", "name": "Google Gemini account" } }
+    },
+
+    {
+      "id": "f1a2b3c4-0008-4000-a000-000000000008",
+      "name": "Guard — Check Output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 180],
+      "parameters": {
+        "method": "POST",
+        "url": "http://YOUR_EC2_IP:8003/check-output",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ \"answer\": $json.response.text, \"sources\": [] }) }}",
+        "options": {
+          "response": { "response": { "fullResponse": false } }
+        }
+      },
+      "notes": "CONFIGURE: Replace YOUR_EC2_IP. Validates final report for safety before delivery."
+    },
+
+    {
+      "id": "f1a2b3c4-0009-4000-a000-000000000009",
+      "name": "Router — By Crop",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [2000, 180],
+      "parameters": {
+        "mode": "rules",
+        "options": { "fallbackOutput": "extra" },
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Info Extractor').item.json.output.crop_id }}",
+                    "rightValue": "onion",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "onion"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Info Extractor').item.json.output.crop_id }}",
+                    "rightValue": "tomato",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "tomato"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Info Extractor').item.json.output.crop_id }}",
+                    "rightValue": "wheat",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "wheat"
+            }
+          ]
+        }
+      },
+      "notes": "Routes by detected crop_id. Default/fallback handles unknown crops."
+    },
+
+    {
+      "id": "f1a2b3c4-0010-4000-a000-000000000010",
+      "name": "Respond — Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2240, 180],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ \"success\": true, \"crop_id\": $('Info Extractor').item.json.output.crop_id, \"report\": $('Guard — Check Output').item.json.answer, \"warnings\": $('Guard — Check Output').item.json.warnings || [] }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "X-AgriTriage-Version", "value": "1.0" }
+            ]
+          }
+        }
+      }
+    }
+
+  ],
+
+  "connections": {
+
+    "Webhook": {
+      "main": [
+        [ { "node": "Guard — Check Input", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "Guard — Check Input": {
+      "main": [
+        [ { "node": "IF — Input Valid", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "IF — Input Valid": {
+      "main": [
+        [ { "node": "Info Extractor",    "type": "main", "index": 0 } ],
+        [ { "node": "Respond — Rejection", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "Info Extractor": {
+      "main": [
+        [ { "node": "AI Agent", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "Gemini — Info LM": {
+      "ai_languageModel": [
+        [ { "node": "Info Extractor", "type": "ai_languageModel", "index": 0 } ]
+      ]
+    },
+
+    "AI Agent": {
+      "main": [
+        [ { "node": "LLM Chain — Report", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "GPT-4o — Agent LM": {
+      "ai_languageModel": [
+        [ { "node": "AI Agent", "type": "ai_languageModel", "index": 0 } ]
+      ]
+    },
+
+    "Tool — RAG Service": {
+      "ai_tool": [
+        [ { "node": "AI Agent", "type": "ai_tool", "index": 0 } ]
+      ]
+    },
+
+    "Tool — Image Analyzer": {
+      "ai_tool": [
+        [ { "node": "AI Agent", "type": "ai_tool", "index": 0 } ]
+      ]
+    },
+
+    "Tool — LangGraph Agent": {
+      "ai_tool": [
+        [ { "node": "AI Agent", "type": "ai_tool", "index": 0 } ]
+      ]
+    },
+
+    "LLM Chain — Report": {
+      "main": [
+        [ { "node": "Guard — Check Output", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "Gemini — Chain LM": {
+      "ai_languageModel": [
+        [ { "node": "LLM Chain — Report", "type": "ai_languageModel", "index": 0 } ]
+      ]
+    },
+
+    "Guard — Check Output": {
+      "main": [
+        [ { "node": "Router — By Crop", "type": "main", "index": 0 } ]
+      ]
+    },
+
+    "Router — By Crop": {
+      "main": [
+        [ { "node": "Respond — Success", "type": "main", "index": 0 } ],
+        [ { "node": "Respond — Success", "type": "main", "index": 0 } ],
+        [ { "node": "Respond — Success", "type": "main", "index": 0 } ],
+        [ { "node": "Respond — Success", "type": "main", "index": 0 } ]
+      ]
+    }
+
+  },
+
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "agritriage" },
+    { "name": "layer2" }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-27T00:00:00.000Z",
+  "versionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "id": "agritriage-main-flow-v1"
+}
