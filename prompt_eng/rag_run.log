@@ -1,0 +1,14 @@
+﻿.venv/Scripts/python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and 
+faster downloads.
+At line:1 char:58
++ ... r_Project"; .venv/Scripts/python prompt_eng/test_rag_prompt.py 2>&1 | ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Running V1_baseline...
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights:  82%|########1 | 163/199 [00:00<00:00, 1625.81it/s]
+Loading weights: 100%|##########| 199/199 [00:00<00:00, 1865.05it/s]

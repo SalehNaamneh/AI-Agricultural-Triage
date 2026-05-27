@@ -1,0 +1,9 @@
+﻿Saved to C:\Users\naamn\PycharmProjects\AI_Enginner_Project\prompt_eng\nemo_colang_results.json
+
+── NeMo Colang Pass Rate per Version ──
+  V1: 19/20 (95%)
+    FAIL TC13: 'who won the football game' expected=True got=False
+  V2: 20/20 (100%)
+  V3: 20/20 (100%)
+  V4: 20/20 (100%)
+  V5: 20/20 (100%)
