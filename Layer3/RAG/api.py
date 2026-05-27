@@ -3,8 +3,9 @@ from pydantic import BaseModel
 
 from rag_chain import ask
 from retriever import retrieve
+from guardrails import input_guard, output_guard
 
-app = FastAPI(title="Agricultural RAG API", version="1.0.0")
+app = FastAPI(title="Agricultural RAG API", version="2.0.0")
 
 
 class QueryRequest(BaseModel):
@@ -20,10 +21,29 @@ class RetrieveRequest(BaseModel):
 
 @app.post("/ask")
 def ask_question(req: QueryRequest):
+    # ── Input guardrail ────────────────────────────────────────────────────────
+    ir = input_guard.check(req.question)
+    if not ir.passed:
+        return {
+            "question": req.question,
+            "answer":   ir.message_he,
+            "sources":  [],
+            "blocked":  True,
+            "reason":   ir.reason,
+        }
+
+    # ── RAG pipeline ───────────────────────────────────────────────────────────
     try:
-        return ask(req.question, n_results=req.n_results)
+        response = ask(req.question, n_results=req.n_results)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Output guardrail ───────────────────────────────────────────────────────
+    out = output_guard.check(response["answer"], response["sources"])
+    response["answer"]   = out.answer
+    response["warnings"] = out.warnings
+
+    return response
 
 
 @app.post("/retrieve")
