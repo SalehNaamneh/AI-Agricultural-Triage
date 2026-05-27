@@ -1,0 +1,362 @@
+{
+  "V1": [
+    {
+      "id": "TC01",
+      "question": "מה הטיפול?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה מחלה: כתם סגול (Purple Blotch) בגידול בצל (בטחון 94.2%). מה הטיפול?"
+    },
+    {
+      "id": "TC02",
+      "question": "מה הטיפול?",
+      "confidence": 31.5,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה מחלה: כתם סגול (Purple Blotch) בגידול בצל (בטחון 31.5%). מה הטיפול?"
+    },
+    {
+      "id": "TC03",
+      "question": "מה הטיפול?",
+      "confidence": 89.0,
+      "class_en": "Healthy",
+      "enriched": "בתמונה זוהתה מחלה: בריא (Healthy) בגידול בצל (בטחון 89.0%). מה הטיפול?"
+    },
+    {
+      "id": "TC04",
+      "question": "What treatment should I apply?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה מחלה: כתם סגול (Purple Blotch) בגידול בצל (בטחון 94.2%). What treatment should I apply?"
+    },
+    {
+      "id": "TC05",
+      "question": "כמה מינון צריך?",
+      "confidence": 72.1,
+      "class_en": "Botrytis",
+      "enriched": "בתמונה זוהתה מחלה: בוטריטיס (Botrytis) בגידול בצל (בטחון 72.1%). כמה מינון צריך?"
+    },
+    {
+      "id": "TC06",
+      "question": "האם הצמח יחלים?",
+      "confidence": 55.0,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה מחלה: כתם סגול (Purple Blotch) בגידול בצל (בטחון 55.0%). האם הצמח יחלים?"
+    },
+    {
+      "id": "TC07",
+      "question": "מה קוד FRAC המתאים?",
+      "confidence": 48.3,
+      "class_en": "Fusarium",
+      "enriched": "בתמונה זוהתה מחלה: פוזריום (Fusarium) בגידול בצל (בטחון 48.3%). מה קוד FRAC המתאים?"
+    },
+    {
+      "id": "TC08",
+      "question": "האם הצמח בסדר?",
+      "confidence": 67.0,
+      "class_en": "Healthy",
+      "enriched": "בתמונה זוהתה מחלה: בריא (Healthy) בגידול בצל (בטחון 67.0%). האם הצמח בסדר?"
+    },
+    {
+      "id": "TC09",
+      "question": "",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה מחלה: כתם סגול (Purple Blotch) בגידול בצל (בטחון 94.2%). "
+    },
+    {
+      "id": "TC10",
+      "question": "מתי לרסס?",
+      "confidence": 82.0,
+      "class_en": "Alternaria",
+      "enriched": "בתמונה זוהתה מחלה: אלטרנריה (Alternaria) בגידול בצל (בטחון 82.0%). מתי לרסס?"
+    }
+  ],
+  "V2": [
+    {
+      "id": "TC01",
+      "question": "מה הטיפול?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: כתם סגול (Purple Blotch) בגידול בצל (בטחון **גבוה** 94.2%). מה הטיפול?"
+    },
+    {
+      "id": "TC02",
+      "question": "מה הטיפול?",
+      "confidence": 31.5,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: כתם סגול (Purple Blotch) בגידול בצל (בטחון **נמוך** 31.5% — ייתכן שהזיהוי שגוי). מה הטיפול?"
+    },
+    {
+      "id": "TC03",
+      "question": "מה הטיפול?",
+      "confidence": 89.0,
+      "class_en": "Healthy",
+      "enriched": "בתמונה זוהתה: בריא (Healthy) בגידול בצל (בטחון **גבוה** 89.0%). מה הטיפול?"
+    },
+    {
+      "id": "TC04",
+      "question": "What treatment should I apply?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: כתם סגול (Purple Blotch) בגידול בצל (בטחון **גבוה** 94.2%). What treatment should I apply?"
+    },
+    {
+      "id": "TC05",
+      "question": "כמה מינון צריך?",
+      "confidence": 72.1,
+      "class_en": "Botrytis",
+      "enriched": "בתמונה זוהתה: בוטריטיס (Botrytis) בגידול בצל (בטחון **גבוה** 72.1%). כמה מינון צריך?"
+    },
+    {
+      "id": "TC06",
+      "question": "האם הצמח יחלים?",
+      "confidence": 55.0,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: כתם סגול (Purple Blotch) בגידול בצל (בטחון **גבוה** 55.0%). האם הצמח יחלים?"
+    },
+    {
+      "id": "TC07",
+      "question": "מה קוד FRAC המתאים?",
+      "confidence": 48.3,
+      "class_en": "Fusarium",
+      "enriched": "בתמונה זוהתה: פוזריום (Fusarium) בגידול בצל (בטחון **נמוך** 48.3% — ייתכן שהזיהוי שגוי). מה קוד FRAC המתאים?"
+    },
+    {
+      "id": "TC08",
+      "question": "האם הצמח בסדר?",
+      "confidence": 67.0,
+      "class_en": "Healthy",
+      "enriched": "בתמונה זוהתה: בריא (Healthy) בגידול בצל (בטחון **גבוה** 67.0%). האם הצמח בסדר?"
+    },
+    {
+      "id": "TC09",
+      "question": "",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: כתם סגול (Purple Blotch) בגידול בצל (בטחון **גבוה** 94.2%). "
+    },
+    {
+      "id": "TC10",
+      "question": "מתי לרסס?",
+      "confidence": 82.0,
+      "class_en": "Alternaria",
+      "enriched": "בתמונה זוהתה: אלטרנריה (Alternaria) בגידול בצל (בטחון **גבוה** 82.0%). מתי לרסס?"
+    }
+  ],
+  "V3": [
+    {
+      "id": "TC01",
+      "question": "מה הטיפול?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות הצמח: 5.8%. מה הטיפול?"
+    },
+    {
+      "id": "TC02",
+      "question": "מה הטיפול?",
+      "confidence": 31.5,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון נמוך (31.5%) — הזיהוי עשוי להיות לא מדויק. ציון בריאות הצמח: 68.5%. מה הטיפול?"
+    },
+    {
+      "id": "TC03",
+      "question": "מה הטיפול?",
+      "confidence": 89.0,
+      "class_en": "Healthy",
+      "enriched": "הצמח נראה **בריא** (ציון בריאות 89.0%). אין עדות לזיהום פעיל. מה הטיפול?"
+    },
+    {
+      "id": "TC04",
+      "question": "What treatment should I apply?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות הצמח: 5.8%. What treatment should I apply?"
+    },
+    {
+      "id": "TC05",
+      "question": "כמה מינון צריך?",
+      "confidence": 72.1,
+      "class_en": "Botrytis",
+      "enriched": "בתמונה זוהתה: **בוטריטיס** (Botrytis) בגידול בצל. בטחון גבוה (72.1%). ציון בריאות הצמח: 27.9%. כמה מינון צריך?"
+    },
+    {
+      "id": "TC06",
+      "question": "האם הצמח יחלים?",
+      "confidence": 55.0,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (55.0%). ציון בריאות הצמח: 45.0%. האם הצמח יחלים?"
+    },
+    {
+      "id": "TC07",
+      "question": "מה קוד FRAC המתאים?",
+      "confidence": 48.3,
+      "class_en": "Fusarium",
+      "enriched": "בתמונה זוהתה: **פוזריום** (Fusarium) בגידול בצל. בטחון נמוך (48.3%) — הזיהוי עשוי להיות לא מדויק. ציון בריאות הצמח: 51.7%. מה קוד FRAC המתאים?"
+    },
+    {
+      "id": "TC08",
+      "question": "האם הצמח בסדר?",
+      "confidence": 67.0,
+      "class_en": "Healthy",
+      "enriched": "הצמח נראה **בריא** (ציון בריאות 67.0%). אין עדות לזיהום פעיל. האם הצמח בסדר?"
+    },
+    {
+      "id": "TC09",
+      "question": "",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות הצמח: 5.8%. "
+    },
+    {
+      "id": "TC10",
+      "question": "מתי לרסס?",
+      "confidence": 82.0,
+      "class_en": "Alternaria",
+      "enriched": "בתמונה זוהתה: **אלטרנריה** (Alternaria) בגידול בצל. בטחון גבוה (82.0%). ציון בריאות הצמח: 18.0%. מתי לרסס?"
+    }
+  ],
+  "V4": [
+    {
+      "id": "TC01",
+      "question": "מה הטיפול?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות: 5.8%. מה הטיפול?"
+    },
+    {
+      "id": "TC02",
+      "question": "מה הטיפול?",
+      "confidence": 31.5,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון נמוך (31.5%) — שקול אימות ויזואלי לפני טיפול. ציון בריאות: 68.5%. מה הטיפול?"
+    },
+    {
+      "id": "TC03",
+      "question": "מה הטיפול?",
+      "confidence": 89.0,
+      "class_en": "Healthy",
+      "enriched": "הצמח נראה **בריא** (ציון בריאות 89.0%). אין עדות לזיהום פעיל. מה הטיפול?"
+    },
+    {
+      "id": "TC04",
+      "question": "What treatment should I apply?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות: 5.8%. What treatment should I apply?"
+    },
+    {
+      "id": "TC05",
+      "question": "כמה מינון צריך?",
+      "confidence": 72.1,
+      "class_en": "Botrytis",
+      "enriched": "בתמונה זוהתה: **בוטריטיס** (Botrytis) בגידול בצל. בטחון גבוה (72.1%). ציון בריאות: 27.9%. כמה מינון צריך?"
+    },
+    {
+      "id": "TC06",
+      "question": "האם הצמח יחלים?",
+      "confidence": 55.0,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (55.0%). ציון בריאות: 45.0%. האם הצמח יחלים?"
+    },
+    {
+      "id": "TC07",
+      "question": "מה קוד FRAC המתאים?",
+      "confidence": 48.3,
+      "class_en": "Fusarium",
+      "enriched": "בתמונה זוהתה: **פוזריום** (Fusarium) בגידול בצל. בטחון נמוך (48.3%) — שקול אימות ויזואלי לפני טיפול. ציון בריאות: 51.7%. מה קוד FRAC המתאים?"
+    },
+    {
+      "id": "TC08",
+      "question": "האם הצמח בסדר?",
+      "confidence": 67.0,
+      "class_en": "Healthy",
+      "enriched": "הצמח נראה **בריא** (ציון בריאות 67.0%). אין עדות לזיהום פעיל. האם הצמח בסדר?"
+    },
+    {
+      "id": "TC09",
+      "question": "",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "בתמונה זוהתה: **כתם סגול** (Purple Blotch) בגידול בצל. בטחון גבוה (94.2%). ציון בריאות: 5.8%. מה הטיפול המומלץ בכתם סגול וכיצד למנוע התפשטות?"
+    },
+    {
+      "id": "TC10",
+      "question": "מתי לרסס?",
+      "confidence": 82.0,
+      "class_en": "Alternaria",
+      "enriched": "בתמונה זוהתה: **אלטרנריה** (Alternaria) בגידול בצל. בטחון גבוה (82.0%). ציון בריאות: 18.0%. מתי לרסס?"
+    }
+  ],
+  "V5": [
+    {
+      "id": "TC01",
+      "question": "מה הטיפול?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **כתם סגול** (Purple Blotch). בטחון: 94.2% — ✅ זיהוי בטוח. ציון בריאות: 5.8%. שאלת המשתמש: מה הטיפול?"
+    },
+    {
+      "id": "TC02",
+      "question": "מה הטיפול?",
+      "confidence": 31.5,
+      "class_en": "Purple Blotch",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **כתם סגול** (Purple Blotch). בטחון: 31.5% — ⚠️ זיהוי לא בטוח — אמת לפני טיפול. ציון בריאות: 68.5%. שאלת המשתמש: מה הטיפול?"
+    },
+    {
+      "id": "TC03",
+      "question": "מה הטיפול?",
+      "confidence": 89.0,
+      "class_en": "Healthy",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מצב: **בריא** — ציון בריאות 89.0%. אין מחלה פעילה. מה הטיפול?"
+    },
+    {
+      "id": "TC04",
+      "question": "What treatment should I apply?",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **כתם סגול** (Purple Blotch). בטחון: 94.2% — ✅ זיהוי בטוח. ציון בריאות: 5.8%. שאלת המשתמש: What treatment should I apply?"
+    },
+    {
+      "id": "TC05",
+      "question": "כמה מינון צריך?",
+      "confidence": 72.1,
+      "class_en": "Botrytis",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **בוטריטיס** (Botrytis). בטחון: 72.1% — ✅ זיהוי בטוח. ציון בריאות: 27.9%. שאלת המשתמש: כמה מינון צריך?"
+    },
+    {
+      "id": "TC06",
+      "question": "האם הצמח יחלים?",
+      "confidence": 55.0,
+      "class_en": "Purple Blotch",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **כתם סגול** (Purple Blotch). בטחון: 55.0% — ✅ זיהוי בטוח. ציון בריאות: 45.0%. שאלת המשתמש: האם הצמח יחלים?"
+    },
+    {
+      "id": "TC07",
+      "question": "מה קוד FRAC המתאים?",
+      "confidence": 48.3,
+      "class_en": "Fusarium",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **פוזריום** (Fusarium). בטחון: 48.3% — ⚠️ זיהוי לא בטוח — אמת לפני טיפול. ציון בריאות: 51.7%. שאלת המשתמש: מה קוד FRAC המתאים?"
+    },
+    {
+      "id": "TC08",
+      "question": "האם הצמח בסדר?",
+      "confidence": 67.0,
+      "class_en": "Healthy",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מצב: **בריא** — ציון בריאות 67.0%. אין מחלה פעילה. האם הצמח בסדר?"
+    },
+    {
+      "id": "TC09",
+      "question": "",
+      "confidence": 94.2,
+      "class_en": "Purple Blotch",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **כתם סגול** (Purple Blotch). בטחון: 94.2% — ✅ זיהוי בטוח. ציון בריאות: 5.8%. שאלת המשתמש: מה הטיפול המומלץ בכתם סגול וכיצד למנוע התפשטות?"
+    },
+    {
+      "id": "TC10",
+      "question": "מתי לרסס?",
+      "confidence": 82.0,
+      "class_en": "Alternaria",
+      "enriched": "[זיהוי תמונה] הגידול: בצל (onion). מחלה שזוהתה: **אלטרנריה** (Alternaria). בטחון: 82.0% — ✅ זיהוי בטוח. ציון בריאות: 18.0%. שאלת המשתמש: מתי לרסס?"
+    }
+  ]
+}

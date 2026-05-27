@@ -57,6 +57,23 @@ services:
               count: 1
               capabilities: [gpu]
 
+  guardrails:
+    build:
+      context: ..
+      dockerfile: Layer3/guardrails/Dockerfile
+    container_name: agritriage-guardrails
+    ports:
+      - "8003:8003"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   image-analyzer:
     build:
       context: ..                          # project root

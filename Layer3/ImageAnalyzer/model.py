@@ -47,6 +47,9 @@ def load_model(crop: CropConfig, device: torch.device) -> nn.Module:
     return model
 
 
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "40.0"))
+
+
 def predict_tensor(model: nn.Module, tensor: torch.Tensor,
                    crop: CropConfig, device: torch.device) -> dict:
     tensor = tensor.unsqueeze(0).to(device)
@@ -56,6 +59,10 @@ def predict_tensor(model: nn.Module, tensor: torch.Tensor,
     top_idx    = int(torch.argmax(torch.tensor(probs)))
     top_folder = crop.idx_to_folder[top_idx]
     top_class  = crop.folder_to_class[top_folder]
+    confidence = round(probs[top_idx] * 100, 1)
+
+    # Below threshold — return uncertain rather than a misleading low-confidence label
+    uncertain = confidence < CONFIDENCE_THRESHOLD
 
     healthy_folder = next(
         (c.folder for c in crop.classes if c.csv_key and "healthy" in c.csv_key.lower()),
@@ -68,9 +75,10 @@ def predict_tensor(model: nn.Module, tensor: torch.Tensor,
     return {
         "crop_en":      crop.name_en,
         "crop_he":      crop.name_he,
-        "class_en":     top_folder,
-        "class_he":     top_class.name_he,
-        "confidence":   round(probs[top_idx] * 100, 1),
+        "class_en":     "uncertain" if uncertain else top_folder,
+        "class_he":     "לא ודאי — תמונה לא ברורה" if uncertain else top_class.name_he,
+        "confidence":   confidence,
+        "uncertain":    uncertain,
         "health_score": health_score,
         "model_arch":   MODEL_ARCH,
         "all_classes": [

@@ -10,10 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── Python dependencies ────────────────────────────────────────────────────────
 COPY Layer3/agent/requirements.txt /tmp/requirements.txt
 
-# Install PyTorch (CUDA 12.8) before the rest so pip doesn't fight over it
+# CPU-only torch — EC2 standard instances have no GPU; saves ~3.5 GB vs CUDA build
 RUN pip install --no-cache-dir \
         torch torchvision \
-        --index-url https://download.pytorch.org/whl/cu128
+        --index-url https://download.pytorch.org/whl/cpu
 
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 

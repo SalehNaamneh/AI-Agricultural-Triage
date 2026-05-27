@@ -50,7 +50,15 @@ class OutputGuardrail:
             if s.get("resistance_warning")
         })
         if resistance_texts:
-            kw = ["עמידות", "סובב", "לסובב", "frac", "FRAC", "resistance", "warning"]
+            # Keywords that indicate resistance was already addressed in the answer.
+            # "FRAC" alone is excluded — mentioning a FRAC code is not the same as
+            # addressing a resistance warning.
+            kw = [
+                "עמידות", "סובב", "לסובב", "סיבוב", "החלף", "להחליף",
+                "resistance", "rotate", "rotation", "alternating",
+                "limit", "הגבל", "פעמים בעונה", "יישומים", "applications per",
+                "do not apply more", "אל תחזור",
+            ]
             if not any(k.lower() in answer.lower() for k in kw):
                 joined = "\n• ".join(resistance_texts)
                 answer += f"\n\n---\n⚠️ **אזהרת עמידות (מקורות):**\n• {joined}"

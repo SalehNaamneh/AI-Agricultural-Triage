@@ -4,6 +4,12 @@ FROM python:3.11-slim
 
 # ── Python dependencies ────────────────────────────────────────────────────────
 COPY Layer3/RAG/requirements.txt /tmp/requirements.txt
+
+# CPU-only torch — RAG only needs sentence-transformers for embeddings (no GPU)
+RUN pip install --no-cache-dir \
+        torch torchvision \
+        --index-url https://download.pytorch.org/whl/cpu
+
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Pre-download the multilingual embedding model so first request is instant

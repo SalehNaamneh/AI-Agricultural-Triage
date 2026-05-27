@@ -33,14 +33,38 @@ def node_analyze_image(state: AgentState) -> dict:
     return {"prediction": pred}
 
 
+_CONFIDENCE_THRESHOLD = 50.0
+
 def node_enrich_question(state: AgentState) -> dict:
     pred = state.get("prediction")
     if not pred:
         return {}
+
+    question = state["question"]
+
+    # Healthy plant — reframe question toward prevention
+    if "healthy" in pred["class_en"].lower():
+        default_q = question or "האם יש המלצות מניעה לשמירה על בריאות הצמח?"
+        enriched = (
+            f"[זיהוי תמונה] הגידול: {pred['crop_he']} ({pred['crop_en']}). "
+            f"מצב: **בריא** — ציון בריאות {pred['health_score']}%. "
+            f"אין מחלה פעילה. {default_q}"
+        )
+        return {"question": enriched}
+
+    # Low confidence — warn the RAG chain not to treat as definitive
+    conf_tag = (
+        "✅ זיהוי בטוח"
+        if pred["confidence"] >= _CONFIDENCE_THRESHOLD
+        else "⚠️ זיהוי לא בטוח — אמת לפני טיפול"
+    )
+    default_q = question or f"מה הטיפול המומלץ ב{pred['class_he']} וכיצד למנוע התפשטות?"
     enriched = (
-        f"בתמונה זוהתה מחלה: {pred['class_he']} ({pred['class_en']}) "
-        f"בגידול {pred['crop_he']} (בטחון {pred['confidence']}%). "
-        f"{state['question']}"
+        f"[זיהוי תמונה] הגידול: {pred['crop_he']} ({pred['crop_en']}). "
+        f"מחלה שזוהתה: **{pred['class_he']}** ({pred['class_en']}). "
+        f"בטחון: {pred['confidence']}% — {conf_tag}. "
+        f"ציון בריאות: {pred['health_score']}%. "
+        f"שאלת המשתמש: {default_q}"
     )
     return {"question": enriched}
 
