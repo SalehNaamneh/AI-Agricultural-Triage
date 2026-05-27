@@ -4,6 +4,7 @@ Input guardrails — run before the LLM call (zero latency, no extra model).
 Checks:
   1. Prompt-injection detection  (regex, EN + HE)
   2. Off-topic detection         (keyword allowlist, EN + HE)
+  3. NeMo Guardrails layer       (optional — active when nemoguardrails is installed)
 """
 
 from __future__ import annotations
@@ -91,5 +92,17 @@ class InputGuardrail:
                         "תסמינים, טיפולים או מניעה של גידולים."
                     ),
                 )
+
+        # ── 3. NeMo Guardrails (optional secondary layer) ─────────────────────
+        from .nemo_guard import nemo_check_input
+        if not nemo_check_input(text):
+            return InputResult(
+                passed=False,
+                reason="nemo_blocked",
+                message_he=(
+                    "⚠️ הבקשה שלך נחסמה על ידי מערכת הגנת NeMo.\n"
+                    "אנא שאל שאלה חקלאית רגילה."
+                ),
+            )
 
         return InputResult(passed=True)

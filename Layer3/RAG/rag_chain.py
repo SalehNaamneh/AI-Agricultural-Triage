@@ -6,8 +6,13 @@ from langchain_core.output_parsers import StrOutputParser
 
 from retriever import retrieve
 
+# ── LLM provider selection ─────────────────────────────────────────────────────
+# LLM_PROVIDER = ollama (default) | openai | gemini
+LLM_PROVIDER    = os.getenv("LLM_PROVIDER",    "ollama")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.1")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OPENAI_MODEL    = os.getenv("OPENAI_MODEL",    "gpt-4o")
+GEMINI_MODEL    = os.getenv("GEMINI_MODEL",    "gemini-1.5-pro")
 
 SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלות גידולים חקלאיים וטיפולים בהן.
 ענה תמיד בעברית בלבד, גם אם השאלה נשאלת באנגלית.
@@ -24,13 +29,32 @@ _prompt = ChatPromptTemplate.from_messages([
     ("human", "{question}"),
 ])
 _parser = StrOutputParser()
-_llm: OllamaLLM | None = None
+_llm = None
 
 
-def _get_llm() -> OllamaLLM:
+def _get_llm():
     global _llm
-    if _llm is None:
+    if _llm is not None:
+        return _llm
+
+    if LLM_PROVIDER == "openai":
+        from langchain_openai import ChatOpenAI
+        _llm = ChatOpenAI(
+            model=OPENAI_MODEL,
+            temperature=0,
+            api_key=os.environ["OPENAI_API_KEY"],
+        )
+    elif LLM_PROVIDER == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        _llm = ChatGoogleGenerativeAI(
+            model=GEMINI_MODEL,
+            temperature=0,
+            google_api_key=os.environ["GOOGLE_API_KEY"],
+        )
+    else:  # ollama (default)
+        # Ollama serves GGUF models using llama.cpp under the hood.
         _llm = OllamaLLM(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+
     return _llm
 
 

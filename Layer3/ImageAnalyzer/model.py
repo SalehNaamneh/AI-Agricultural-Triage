@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -8,15 +9,27 @@ from torchvision import models
 
 from crop_config import CropConfig
 
+# MODEL_ARCH = efficientnet_b0 (default) | resnet50
+MODEL_ARCH = os.getenv("MODEL_ARCH", "efficientnet_b0")
+
 
 def build_model(num_classes: int, pretrained: bool = True) -> nn.Module:
-    weights = models.EfficientNet_B0_Weights.DEFAULT if pretrained else None
-    model = models.efficientnet_b0(weights=weights)
-    in_features = model.classifier[1].in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3),
-        nn.Linear(in_features, num_classes),
-    )
+    if MODEL_ARCH == "resnet50":
+        weights = models.ResNet50_Weights.DEFAULT if pretrained else None
+        model   = models.resnet50(weights=weights)
+        in_features = model.fc.in_features
+        model.fc = nn.Sequential(
+            nn.Dropout(p=0.3),
+            nn.Linear(in_features, num_classes),
+        )
+    else:  # efficientnet_b0 (default) — better accuracy/efficiency tradeoff
+        weights = models.EfficientNet_B0_Weights.DEFAULT if pretrained else None
+        model   = models.efficientnet_b0(weights=weights)
+        in_features = model.classifier[1].in_features
+        model.classifier = nn.Sequential(
+            nn.Dropout(p=0.3),
+            nn.Linear(in_features, num_classes),
+        )
     return model
 
 
@@ -59,6 +72,7 @@ def predict_tensor(model: nn.Module, tensor: torch.Tensor,
         "class_he":     top_class.name_he,
         "confidence":   round(probs[top_idx] * 100, 1),
         "health_score": health_score,
+        "model_arch":   MODEL_ARCH,
         "all_classes": [
             {
                 "class_en":    crop.idx_to_folder[i],

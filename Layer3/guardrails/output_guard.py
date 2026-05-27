@@ -47,7 +47,7 @@ class OutputGuardrail:
         resistance_texts = list({
             s["resistance_warning"]
             for s in sources
-            if s.get("resistance_warning") and "⚠" in s["resistance_warning"]
+            if s.get("resistance_warning")
         })
         if resistance_texts:
             kw = ["עמידות", "סובב", "לסובב", "frac", "FRAC", "resistance", "warning"]

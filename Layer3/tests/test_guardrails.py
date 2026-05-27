@@ -192,11 +192,11 @@ class TestResistanceWarning:
         result = og.check("some answer", sources)
         assert "resistance_warning_appended" not in result.warnings
 
-    def test_warning_without_checkmark_is_ignored(self, og):
-        # Resistance text without ⚠️ should not trigger appending
+    def test_non_empty_resistance_triggers_append(self, og):
+        # Any non-empty resistance warning (with or without ⚠️) should trigger append
         sources = [_src(score=0.9, typ="treatment", resistance="rotate FRAC groups")]
         result = og.check("some answer", sources)
-        assert "resistance_warning_appended" not in result.warnings
+        assert "resistance_warning_appended" in result.warnings
 
     def test_deduplicated_warnings(self, og):
         # Two identical resistance warnings should only be appended once
