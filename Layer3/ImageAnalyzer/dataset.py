@@ -1,29 +1,14 @@
+import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from PIL import Image
 import torch
 from torch.utils.data import Dataset, WeightedRandomSampler
 from torchvision import transforms
 import numpy as np
 
-IMAGES_DIR = Path(__file__).resolve().parents[2] / "data" / "data" / "onion" / "images"
-
-# Sorted so class index is deterministic across runs
-CLASSES = sorted([d.name for d in IMAGES_DIR.iterdir() if d.is_dir()])
-
-CLASS_TO_IDX = {cls: i for i, cls in enumerate(CLASSES)}
-
-CLASS_NAMES_HE = {
-    "Bulb Rot":                "ריקבון הבצל",
-    "Bulb_blight-D":           "כימשון הבצלת",
-    "Caterpillar-P":           "זחל (מזיק)",
-    "Downy mildew":            "כימשון הבצל",
-    "Fusarium-D":              "פוזריום",
-    "Healthy leaves":          "בצל בריא",
-    "Purple blotch":           "כתם סגול",
-    "Rust":                    "חלודה",
-    "stemphylium Leaf Blight": "סטמפיליום",
-    "Virosis-D":               "וירוס",
-}
+from crop_config import CropConfig
 
 TRAIN_TRANSFORM = transforms.Compose([
     transforms.Resize((256, 256)),
@@ -43,7 +28,7 @@ VAL_TRANSFORM = transforms.Compose([
 ])
 
 
-class OnionDataset(Dataset):
+class CropDataset(Dataset):
     def __init__(self, samples: list[tuple[Path, int]], transform=None):
         self.samples = samples
         self.transform = transform
@@ -59,20 +44,23 @@ class OnionDataset(Dataset):
         return img, label
 
 
-def load_samples() -> list[tuple[Path, int]]:
+def load_samples(crop: CropConfig) -> list[tuple[Path, int]]:
     samples = []
-    for cls in CLASSES:
-        folder = IMAGES_DIR / cls
-        for img_path in folder.glob("*.jpg"):
-            samples.append((img_path, CLASS_TO_IDX[cls]))
+    for folder in crop.class_folders:
+        folder_path = crop.images_dir / folder
+        if not folder_path.exists():
+            continue
+        label = crop.folder_to_idx[folder]
+        for img_path in folder_path.glob("*.jpg"):
+            samples.append((img_path, label))
     return samples
 
 
-def make_weighted_sampler(samples: list[tuple[Path, int]]) -> WeightedRandomSampler:
+def make_weighted_sampler(samples: list[tuple[Path, int]], num_classes: int) -> WeightedRandomSampler:
     labels = np.array([s[1] for s in samples])
-    class_counts = np.bincount(labels, minlength=len(CLASSES))
-    class_weights = 1.0 / np.maximum(class_counts, 1)
-    sample_weights = class_weights[labels]
+    counts = np.bincount(labels, minlength=num_classes)
+    weights = 1.0 / np.maximum(counts, 1)
+    sample_weights = weights[labels]
     return WeightedRandomSampler(
         weights=torch.from_numpy(sample_weights).float(),
         num_samples=len(samples),
@@ -80,12 +68,12 @@ def make_weighted_sampler(samples: list[tuple[Path, int]]) -> WeightedRandomSamp
     )
 
 
-def train_val_split(samples, val_ratio=0.2, seed=42):
+def train_val_split(samples: list, val_ratio: float = 0.2, seed: int = 42):
     rng = np.random.default_rng(seed)
-    # Stratified split per class
-    train, val = [], []
     labels = np.array([s[1] for s in samples])
-    for cls_idx in range(len(CLASSES)):
+    num_classes = labels.max() + 1
+    train, val = [], []
+    for cls_idx in range(num_classes):
         idx = np.where(labels == cls_idx)[0]
         rng.shuffle(idx)
         split = max(1, int(len(idx) * val_ratio))

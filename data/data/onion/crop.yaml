@@ -1,0 +1,54 @@
+name_en: Onion
+name_he: בצל
+icon: "🧅"
+
+disease_csv: disease_info/onion_diseases.csv
+spray_csv: disease_info/onion_spray_products.csv
+
+# To add a new disease:
+#   1. Add a folder under images/ with images
+#   2. Add an entry here (csv_key: null if no CSV data yet)
+#   3. Add a row to disease_csv and spray_csv (optional)
+#   4. Re-run Layer3/RAG/ingest.py to update the knowledge base
+#   5. Re-run Layer3/ImageAnalyzer/train.py --crop onion to retrain model
+
+classes:
+  - folder: Purple blotch
+    name_he: כתם סגול
+    csv_key: Purple Blotch
+
+  - folder: Downy mildew
+    name_he: כימשון הבצל
+    csv_key: Downy Mildew
+
+  - folder: stemphylium Leaf Blight
+    name_he: סטמפיליום כימשון עלים
+    csv_key: Stemphylium Leaf Blight
+
+  - folder: Healthy leaves
+    name_he: בצל בריא
+    csv_key: Healthy Onion
+
+  - folder: Bulb Rot
+    name_he: ריקבון הבצל
+    csv_key: null
+
+  - folder: Bulb_blight-D
+    name_he: כימשון הבצלת
+    csv_key: null
+
+  - folder: Caterpillar-P
+    name_he: זחל (מזיק)
+    csv_key: null
+
+  - folder: Fusarium-D
+    name_he: פוזריום
+    csv_key: null
+
+  - folder: Rust
+    name_he: חלודה
+    csv_key: null
+
+  - folder: Virosis-D
+    name_he: וירוס
+    csv_key: null

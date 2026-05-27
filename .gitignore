@@ -14,6 +14,7 @@ Layer3/RAG/chroma_db/
 
 # Trained model weights (large binary — store separately or use Git LFS)
 Layer3/ImageAnalyzer/best_model.pth
+Layer3/ImageAnalyzer/models/
 
 # Data (images are large — keep only CSVs)
 data/data/onion/images/

@@ -1,58 +1,55 @@
-import csv
+import sys
 import requests
 import gradio as gr
 from pathlib import Path
 
-# ─── Paths ────────────────────────────────────────────────────────────────────
-BASE        = Path(__file__).resolve().parents[1]
-DATA_DIR    = BASE / "data" / "data" / "onion"
-IMAGES_DIR  = DATA_DIR / "images"
-DISEASE_CSV = DATA_DIR / "disease_info" / "onion_diseases.csv"
-SPRAY_CSV   = DATA_DIR / "disease_info" / "onion_spray_products.csv"
-RAG_URL     = "http://localhost:8000"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from crop_config import load_all_crops, CropConfig
 
-# ─── Data ─────────────────────────────────────────────────────────────────────
-def _csv(path):
-    with open(path, encoding="utf-8-sig") as f:
-        return list(csv.DictReader(f))
+RAG_URL            = "http://localhost:8000"
+IMAGE_ANALYZER_URL = "http://localhost:8002"
 
-DISEASE_INFO = {r["disease_name_en"]: r for r in _csv(DISEASE_CSV)}
-TREATMENTS: dict = {}
-for _r in _csv(SPRAY_CSV):
-    TREATMENTS.setdefault(_r["disease_name_en"], []).append(_r)
+ALL_CROPS = load_all_crops()
+DEFAULT_CROP = next(iter(ALL_CROPS)) if ALL_CROPS else None
+CROP_CHOICES = [(f"{c.icon} {c.name_he}", crop_id) for crop_id, c in ALL_CROPS.items()]
 
-DISEASES = [
-    {"folder": "Purple blotch",           "name": "כתם סגול",           "csv_key": "Purple Blotch"},
-    {"folder": "Downy mildew",            "name": "כימשון הבצל",         "csv_key": "Downy Mildew"},
-    {"folder": "stemphylium Leaf Blight", "name": "סטמפיליום",           "csv_key": "Stemphylium Leaf Blight"},
-    {"folder": "Healthy leaves",          "name": "בצל בריא",            "csv_key": "Healthy Onion"},
-    {"folder": "Bulb Rot",                "name": "ריקבון הבצל",         "csv_key": None},
-    {"folder": "Bulb_blight-D",           "name": "כימשון הבצלת",        "csv_key": None},
-    {"folder": "Caterpillar-P",           "name": "זחל (מזיק)",          "csv_key": None},
-    {"folder": "Fusarium-D",              "name": "פוזריום",              "csv_key": None},
-    {"folder": "Rust",                    "name": "חלודה",               "csv_key": None},
-    {"folder": "Virosis-D",               "name": "וירוס",               "csv_key": None},
-]
 
-def _first_img(folder: str):
-    p = IMAGES_DIR / folder
-    imgs = sorted(p.glob("*.jpg")) if p.exists() else []
-    return str(imgs[0]) if imgs else None
+def _first_img(crop: CropConfig, folder: str) -> str | None:
+    p = crop.images_dir / folder
+    for pattern in ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.PNG"):
+        imgs = sorted(p.glob(pattern))
+        if imgs:
+            return str(imgs[0])
+    return None
 
-GALLERY, GALLERY_MAP = [], []
-for _d in DISEASES:
-    _img = _first_img(_d["folder"])
-    if _img:
-        GALLERY.append((_img, _d["name"]))
-        GALLERY_MAP.append(_d)
+
+def build_gallery(crop_id: str):
+    if crop_id not in ALL_CROPS:
+        return [], []
+    crop = ALL_CROPS[crop_id]
+    gallery, gallery_map = [], []
+    for cls in crop.classes:
+        img = _first_img(crop, cls.folder)
+        if img:
+            gallery.append((img, cls.name_he))
+            gallery_map.append((crop_id, cls))
+    return gallery, gallery_map
+
 
 # ─── HTML generators ──────────────────────────────────────────────────────────
 def _treatment_card(t: dict) -> str:
-    warn  = "⚠" in t.get("resistance_warning", "")
-    color = "#c1121f" if warn else "#40916c"
-    dose  = t.get("dose_per_dunam", "")
-    dose_html = f'<div style="font-size:12px;color:#495057;margin-bottom:5px">📏 {dose}</div>' if dose else ""
-    warn_html = f'<div style="font-size:11px;color:{"#c1121f" if warn else "#6c757d"};font-style:italic;margin-top:4px">{"⚠️ " if warn else ""}{t.get("resistance_warning","")}</div>'
+    warn      = "⚠" in t.get("resistance_warning", "")
+    color     = "#c1121f" if warn else "#40916c"
+    dose      = t.get("dose_per_dunam", "")
+    dose_html = (
+        f'<div style="font-size:12px;color:#495057;margin-bottom:5px">📏 {dose}</div>'
+        if dose else ""
+    )
+    warn_html = (
+        f'<div style="font-size:11px;color:{"#c1121f" if warn else "#6c757d"};'
+        f'font-style:italic;margin-top:4px">{"⚠️ " if warn else ""}'
+        f'{t.get("resistance_warning","")}</div>'
+    )
     return f"""
 <div style="background:white;border-radius:14px;padding:16px;margin:6px;
      box-shadow:0 3px 12px rgba(0,0,0,0.10);border-left:5px solid {color};
@@ -67,6 +64,7 @@ def _treatment_card(t: dict) -> str:
   {dose_html}
   {warn_html}
 </div>"""
+
 
 def _info_grid(info: dict) -> str:
     def bullet(text): return "• " + "<br>• ".join(text.split(" | ")) if text else "—"
@@ -103,15 +101,20 @@ def _info_grid(info: dict) -> str:
   {confusion}
 </div>"""
 
-def disease_detail_html(d: dict) -> str:
-    info   = DISEASE_INFO.get(d["csv_key"])  if d["csv_key"] else None
-    treats = TREATMENTS.get(d["csv_key"], []) if d["csv_key"] else []
+
+def disease_detail_html(crop_id: str, cls) -> str:
+    crop         = ALL_CROPS[crop_id]
+    disease_info = crop.load_disease_info()
+    treatments   = crop.load_treatments()
+
+    info   = disease_info.get(cls.csv_key)  if cls.csv_key else None
+    treats = treatments.get(cls.csv_key, []) if cls.csv_key else []
 
     if not info and not treats:
         return f"""
 <div style="text-align:center;padding:48px;color:#aaa;direction:rtl">
   <div style="font-size:52px;margin-bottom:12px">🌿</div>
-  <h3 style="color:#2d6a4f">{d['name']}</h3>
+  <h3 style="color:#2d6a4f">{cls.name_he}</h3>
   <p>מידע מלא יתווסף בעדכון הקרוב.</p>
 </div>"""
 
@@ -131,6 +134,7 @@ def disease_detail_html(d: dict) -> str:
 
     return f'<div style="padding:4px 4px">{info_block}{treat_block}</div>'
 
+
 PLACEHOLDER = """
 <div style="text-align:center;padding:56px 20px;color:#c0c8c4;
      border:2px dashed #c8e6c9;border-radius:16px;margin-top:8px;direction:rtl">
@@ -138,22 +142,31 @@ PLACEHOLDER = """
   <div style="font-size:16px;font-weight:500">לחץ על תמונת מחלה כדי לראות פרטים ואפשרויות טיפול</div>
 </div>"""
 
-def on_gallery_select(evt: gr.SelectData) -> str:
+
+def on_gallery_select(evt: gr.SelectData, gallery_map: list) -> str:
     idx = evt.index
     if isinstance(idx, (list, tuple)):
         idx = idx[0]
-    if 0 <= idx < len(GALLERY_MAP):
-        return disease_detail_html(GALLERY_MAP[idx])
+    if gallery_map and 0 <= idx < len(gallery_map):
+        crop_id, cls = gallery_map[idx]
+        return disease_detail_html(crop_id, cls)
     return PLACEHOLDER
+
+
+def on_crop_change(crop_id: str):
+    gallery, gallery_map = build_gallery(crop_id)
+    return gallery, gallery_map, PLACEHOLDER, crop_id
+
 
 # ─── Chat logic ───────────────────────────────────────────────────────────────
 WELCOME = (
     "👋 שלום! אני **AgriTriage AI**, העוזר החקלאי שלך.\n\n"
-    "שאל אותי כל שאלה על מחלות בצל, תסמינים, טיפולים ומניעה — "
-    "או העלה תמונה של הצמח ותאר מה אתה רואה. אשמח לעזור לזהות את הבעיה ולהמליץ על פתרונות."
+    "שאל אותי כל שאלה על מחלות גידולים, תסמינים, טיפולים ומניעה — "
+    "או העלה תמונה של הצמח ואזהה את הבעיה ואמליץ על פתרונות."
 )
 
-def respond(message, history: list) -> tuple:
+
+def respond(message, history: list, crop_id: str) -> tuple:
     if isinstance(message, dict):
         text  = (message.get("text") or "").strip()
         files = message.get("files") or []
@@ -163,36 +176,68 @@ def respond(message, history: list) -> tuple:
     if not text and not files:
         return history, gr.MultimodalTextbox(value=None)
 
-    query = text or "נתח את תמונת הצמח הזו — איזו מחלה או בעיה אתה מזהה?"
+    prediction_banner = ""
+    rag_prefix        = ""
+
+    if files:
+        try:
+            with open(files[0], "rb") as img_file:
+                resp = requests.post(
+                    f"{IMAGE_ANALYZER_URL}/predict",
+                    files={"file": ("image.jpg", img_file, "image/jpeg")},
+                    params={"crop": crop_id},
+                    timeout=30,
+                )
+            if resp.ok:
+                pred       = resp.json()
+                class_he   = pred.get("class_he", "")
+                class_en   = pred.get("class_en", "")
+                confidence = pred.get("confidence", 0)
+                health     = pred.get("health_score", 0)
+                crop_name  = ALL_CROPS[crop_id].name_he if crop_id in ALL_CROPS else crop_id
+                prediction_banner = (
+                    f"🔍 **זוהה: {class_he}** ({class_en}) — בטחון {confidence}%"
+                    + (f" | בריאות: {health}%" if health else "")
+                    + "\n\n"
+                )
+                rag_prefix = f"בתמונה זוהתה מחלה: {class_he} ({class_en}) בגידול {crop_name}. "
+        except Exception:
+            pass
+
+    query = text or "ספר לי על המחלה הזו וכיצד לטפל בה."
 
     if files:
         user_content = [{"type": "image", "value": files[0]}, {"type": "text", "value": query}]
     else:
         user_content = query
+
     history.append({"role": "user", "content": user_content})
 
     try:
-        r = requests.post(f"{RAG_URL}/ask", json={"question": query}, timeout=90)
+        rag_question = rag_prefix + query
+        r       = requests.post(f"{RAG_URL}/ask", json={"question": rag_question}, timeout=90)
         data    = r.json()
         answer  = data.get("answer", "לא התקבלה תשובה.")
         sources = data.get("sources", [])
+        footer  = ""
         if sources:
             diseases = list({s["disease"] for s in sources if s.get("disease")})
             footer = f"\n\n---\n📚 *מקורות: {', '.join(diseases)}*"
-        else:
-            footer = ""
-        reply = answer + footer
+        reply = prediction_banner + answer + footer
     except Exception as e:
         reply = (
-            "⚠️ **לא ניתן להתחבר לשירות ה-RAG.**\n\n"
-            f"ודא ש-`Layer3/RAG/api.py` פועל על פורט 8000.\n\n`{e}`"
+            prediction_banner
+            + "⚠️ **לא ניתן להתחבר לשירות ה-RAG.**\n\n"
+            + f"ודא ש-`Layer3/RAG/api.py` פועל על פורט 8000.\n\n`{e}`"
         )
 
     history.append({"role": "assistant", "content": reply})
     return history, gr.MultimodalTextbox(value=None)
 
+
 def clear_chat():
     return [{"role": "assistant", "content": WELCOME}]
+
 
 # ─── CSS ──────────────────────────────────────────────────────────────────────
 CSS = """
@@ -207,6 +252,12 @@ body, .gradio-container { direction: rtl; }
 }
 .app-header h1 { margin: 0 0 6px; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
 .app-header p  { margin: 0; opacity: 0.88; font-size: 15px; }
+
+.crop-selector-row {
+    background: #f0faf5; border-radius: 14px; padding: 14px 20px;
+    margin-bottom: 8px; border: 1px solid #d8f3dc;
+    display: flex; align-items: center; gap: 12px;
+}
 
 #chatbot { border-radius: 16px !important; }
 
@@ -233,13 +284,33 @@ footer { display: none !important; }
 """
 
 # ─── UI ───────────────────────────────────────────────────────────────────────
+_init_gallery, _init_map = build_gallery(DEFAULT_CROP) if DEFAULT_CROP else ([], [])
+
 with gr.Blocks(title="AgriTriage AI") as demo:
 
     gr.HTML("""
     <div class="app-header">
       <h1>🌾 AgriTriage AI</h1>
-      <p>מערכת אינטליגנטית לזיהוי וניהול מחלות בצל</p>
+      <p>מערכת אינטליגנטית לזיהוי וניהול מחלות גידולים</p>
     </div>""")
+
+    # ── Shared crop selector ──────────────────────────────────────────────────
+    with gr.Row(elem_classes="crop-selector-row"):
+        crop_dropdown = gr.Dropdown(
+            choices=CROP_CHOICES,
+            value=DEFAULT_CROP,
+            label="גידול נוכחי",
+            scale=0,
+            min_width=180,
+        )
+        gr.HTML(
+            '<div style="color:#52b788;font-size:13px;padding:4px 0;direction:rtl">'
+            "בחר גידול — הצ'אט וסייר המחלות יעודכנו בהתאם"
+            "</div>"
+        )
+
+    crop_state       = gr.State(value=DEFAULT_CROP)
+    gallery_map_state = gr.State(value=_init_map)
 
     with gr.Tabs():
 
@@ -254,7 +325,7 @@ with gr.Blocks(title="AgriTriage AI") as demo:
             )
 
             msg_box = gr.MultimodalTextbox(
-                placeholder="שאל על מחלות, תסמינים, טיפולים... או העלה תמונה של הצמח 📷",
+                placeholder="שאל על מחלות, תסמינים, טיפולים... או העלה תמונה 📷",
                 show_label=False,
                 file_types=["image"],
                 lines=1,
@@ -262,30 +333,21 @@ with gr.Blocks(title="AgriTriage AI") as demo:
             )
 
             with gr.Row():
-                clear_btn = gr.Button("🗑️  נקה שיחה", elem_classes="clear-btn",
-                                      size="sm", variant="secondary")
+                clear_btn = gr.Button(
+                    "🗑️  נקה שיחה", elem_classes="clear-btn",
+                    size="sm", variant="secondary"
+                )
 
-            msg_box.submit(respond, [msg_box, chatbot], [chatbot, msg_box])
+            msg_box.submit(respond, [msg_box, chatbot, crop_state], [chatbot, msg_box])
             clear_btn.click(clear_chat, outputs=[chatbot])
 
         # ── Tab 2: Disease Explorer ───────────────────────────────────────────
         with gr.Tab("🔬 סייר מחלות"):
 
-            with gr.Row():
-                gr.Dropdown(
-                    choices=["🧅 בצל"], value="🧅 בצל",
-                    label="גידול", scale=0, min_width=160,
-                )
-                gr.HTML(
-                    '<div style="display:flex;align-items:center;padding:8px 4px;'
-                    'color:#6c757d;font-size:13px;direction:rtl">'
-                    'גידולים נוספים בקרוב — עגבנייה, חיטה, תפוח אדמה...</div>'
-                )
-
             gr.HTML('<div class="gallery-label">🖼️ לחץ על מחלה לצפייה בפרטים וטיפולים ↓</div>')
 
             gallery = gr.Gallery(
-                value=GALLERY,
+                value=_init_gallery,
                 columns=5,
                 rows=2,
                 height=340,
@@ -295,7 +357,14 @@ with gr.Blocks(title="AgriTriage AI") as demo:
             )
 
             detail_panel = gr.HTML(value=PLACEHOLDER, elem_id="disease-detail")
-            gallery.select(on_gallery_select, outputs=[detail_panel])
+            gallery.select(on_gallery_select, [gallery_map_state], [detail_panel])
+
+    # ── Crop change wires both tabs ───────────────────────────────────────────
+    crop_dropdown.change(
+        on_crop_change,
+        inputs=[crop_dropdown],
+        outputs=[gallery, gallery_map_state, detail_panel, crop_state],
+    )
 
 if __name__ == "__main__":
     demo.launch(
