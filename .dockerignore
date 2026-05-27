@@ -1,0 +1,28 @@
+# Virtual environment
+.venv/
+
+# Large training data — images not needed for inference
+data/data/*/images/
+
+# Trained model weights — mounted as Docker volume at runtime
+Layer3/ImageAnalyzer/models/
+Layer3/ImageAnalyzer/best_model.pth
+
+# ChromaDB index — mounted as Docker volume at runtime
+Layer3/RAG/chroma_db/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# Claude memory / plans
+.claude/

@@ -4,31 +4,30 @@ services:
 
   rag:
     build:
-      context: ./RAG
-      dockerfile: Dockerfile
+      context: ..                          # project root — gives Dockerfile access to crop_config.py
+      dockerfile: Layer3/RAG/Dockerfile
     container_name: agritriage-rag
     ports:
       - "8000:8000"
     volumes:
-      - ./RAG/chroma_db:/app/chroma_db
-      - ../data:/data:ro
+      # ChromaDB persisted index (rebuilt automatically on first run if empty)
+      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"   # lets container reach Ollama on host
 
   image-analyzer:
     build:
-      context: ./ImageAnalyzer
-      dockerfile: Dockerfile
+      context: ..                          # project root
+      dockerfile: Layer3/ImageAnalyzer/Dockerfile
     container_name: agritriage-image-analyzer
     ports:
       - "8002:8002"
     volumes:
-      # Mount trained weights at runtime (not baked into image)
-      - ./ImageAnalyzer/best_model.pth:/app/best_model.pth:ro
-      - ../data:/data:ro
+      # Trained model weights (not baked in; update without rebuilding the image)
+      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
