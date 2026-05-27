@@ -39,13 +39,22 @@ def _disease_he_in_query(query: str) -> str | None:
     return None
 
 
+_client: chromadb.ClientAPI | None = None
+_collection: chromadb.Collection | None = None
+
+
 def get_collection() -> chromadb.Collection:
+    global _client, _collection
+    if _collection is not None:
+        return _collection
     embed_fn = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
-    client = chromadb.PersistentClient(path=str(CHROMA_PATH))
+    if _client is None:
+        _client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     try:
-        return client.get_collection(name=COLLECTION_NAME, embedding_function=embed_fn)
+        _collection = _client.get_collection(name=COLLECTION_NAME, embedding_function=embed_fn)
     except Exception:
-        return build_index()
+        _collection = build_index()
+    return _collection
 
 
 def retrieve(query: str, n_results: int = 5, doc_type: str | None = None) -> list[dict]:

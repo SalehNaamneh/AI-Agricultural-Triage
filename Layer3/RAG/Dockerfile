@@ -27,6 +27,9 @@ COPY Layer3/RAG/rag_chain.py Layer3/RAG/
 COPY Layer3/RAG/retriever.py Layer3/RAG/
 COPY Layer3/RAG/ingest.py    Layer3/RAG/
 
+# Guardrails package (imported by api.py via sys.path pointing at Layer3/)
+COPY Layer3/guardrails/      Layer3/guardrails/
+
 # ── Runtime ────────────────────────────────────────────────────────────────────
 # ChromaDB index is NOT baked in — mount Layer3/RAG/chroma_db/ as a volume.
 # On first run (empty volume), retriever.py will call build_index() automatically.

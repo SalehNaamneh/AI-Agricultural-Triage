@@ -17,6 +17,12 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"   # lets container reach Ollama on host
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   image-analyzer:
     build:
@@ -31,6 +37,12 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     deploy:
       resources:
         reservations:

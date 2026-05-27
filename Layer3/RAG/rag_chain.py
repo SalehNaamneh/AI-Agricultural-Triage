@@ -8,7 +8,7 @@ from retriever import retrieve
 
 OLLAMA_MODEL = "llama3.1"
 
-SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלות בצל וטיפולים בהן.
+SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלות גידולים חקלאיים וטיפולים בהן.
 ענה תמיד בעברית בלבד, גם אם השאלה נשאלת באנגלית.
 ענה על שאלת החקלאי על פי ההקשר המסופק בלבד.
 אם ההקשר אינו מכיל מידע מספיק, ציין זאת בבירור.
@@ -42,7 +42,14 @@ def ask(question: str, n_results: int = 5) -> dict:
         "question": question,
         "answer": answer,
         "sources": [
-            {"type": d["metadata"]["type"], "disease": d["metadata"].get("disease_en"), "score": d["score"]}
+            {
+                "type":               d["metadata"]["type"],
+                "disease":            d["metadata"].get("disease_en"),
+                "disease_he":         d["metadata"].get("disease_he"),
+                "score":              d["score"],
+                "frac_code":          d["metadata"].get("frac_code", ""),
+                "resistance_warning": d["metadata"].get("resistance_warning", ""),
+            }
             for d in docs
         ],
     }

@@ -129,10 +129,11 @@ def build_index(reset: bool = False) -> chromadb.Collection:
         for i, row in enumerate(product_rows):
             class_id = row["class_id"]
             shared = {**base_meta, "type": "treatment",
-                      "disease_en": row["disease_name_en"],
-                      "disease_he": row["disease_name_he"],
-                      "product_en": row["product_name_en"],
-                      "frac_code":  row["frac_code"]}
+                      "disease_en":          row["disease_name_en"],
+                      "disease_he":          row["disease_name_he"],
+                      "product_en":          row["product_name_en"],
+                      "frac_code":           row["frac_code"],
+                      "resistance_warning":  row.get("resistance_warning", "")}
 
             # English document
             documents.append(_product_text_en(row, crop))
