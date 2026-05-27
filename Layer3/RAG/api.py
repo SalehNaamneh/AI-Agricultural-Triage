@@ -3,6 +3,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # Layer3/ → guardrails package
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from rag_chain import ask
@@ -10,6 +11,12 @@ from retriever import retrieve
 from guardrails import input_guard, output_guard
 
 app = FastAPI(title="Agricultural RAG API", version="2.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class QueryRequest(BaseModel):
@@ -55,6 +62,19 @@ def retrieve_docs(req: RetrieveRequest):
     try:
         docs = retrieve(req.query, n_results=req.n_results, doc_type=req.doc_type)
         return {"query": req.query, "results": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/ingest")
+def ingest(reset: bool = False):
+    """Rebuild the ChromaDB index from the source CSVs. Pass ?reset=true to wipe first."""
+    try:
+        import retriever as _retriever
+        from ingest import build_index
+        collection = build_index(reset=reset)
+        _retriever._collection = collection   # refresh singleton
+        return {"status": "ok", "documents": collection.count(), "reset": reset}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

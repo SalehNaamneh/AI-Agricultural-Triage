@@ -25,7 +25,7 @@ class InputGuardrail:
     _INJECTION_EN = re.compile(
         r"\b("
         r"ignore\s+(previous|all|your|the)\s+(instructions?|prompt|rules?)|"
-        r"forget\s+(your|all|previous|the)\s+(instructions?|rules?)|"
+        r"forget\s+(your|all|previous|the)(\s+\w+)?\s+(instructions?|rules?)|"
         r"(you\s+are\s+now|act\s+as|pretend\s+(you\s+are|to\s+be)|roleplay)|"
         r"disregard\s+(your|all|previous)|"
         r"override\s+(your|the)\s+(system|prompt|instructions?)|"

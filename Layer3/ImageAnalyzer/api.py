@@ -5,12 +5,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import io
 import torch
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
 from crop_config import load_all_crops
 from predict import predict_pil
 
 app = FastAPI(title="AgriTriage Image Analyzer", version="2.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 _crops = {}
 

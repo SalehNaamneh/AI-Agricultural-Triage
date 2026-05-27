@@ -1,12 +1,13 @@
+import os
 
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 
 from retriever import retrieve
 
-OLLAMA_MODEL = "llama3.1"
+OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.1")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלות גידולים חקלאיים וטיפולים בהן.
 ענה תמיד בעברית בלבד, גם אם השאלה נשאלת באנגלית.
@@ -18,13 +19,19 @@ SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלו
 {context}
 """
 
-prompt = ChatPromptTemplate.from_messages([
+_prompt = ChatPromptTemplate.from_messages([
     ("system", SYSTEM_PROMPT),
     ("human", "{question}"),
 ])
+_parser = StrOutputParser()
+_llm: OllamaLLM | None = None
 
-llm = OllamaLLM(model=OLLAMA_MODEL)
-parser = StrOutputParser()
+
+def _get_llm() -> OllamaLLM:
+    global _llm
+    if _llm is None:
+        _llm = OllamaLLM(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+    return _llm
 
 
 def format_context(docs: list[dict]) -> str:
@@ -35,7 +42,7 @@ def ask(question: str, n_results: int = 5) -> dict:
     docs = retrieve(question, n_results=n_results)
     context = format_context(docs)
 
-    chain = prompt | llm | parser
+    chain = _prompt | _get_llm() | _parser
     answer = chain.invoke({"context": context, "question": question})
 
     return {

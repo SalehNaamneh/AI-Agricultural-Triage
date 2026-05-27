@@ -44,6 +44,9 @@ class CropDataset(Dataset):
         return img, label
 
 
+_IMG_EXTENSIONS = ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.JPG", "*.JPEG", "*.PNG", "*.BMP")
+
+
 def load_samples(crop: CropConfig) -> list[tuple[Path, int]]:
     samples = []
     for folder in crop.class_folders:
@@ -51,8 +54,12 @@ def load_samples(crop: CropConfig) -> list[tuple[Path, int]]:
         if not folder_path.exists():
             continue
         label = crop.folder_to_idx[folder]
-        for img_path in folder_path.glob("*.jpg"):
-            samples.append((img_path, label))
+        seen: set[Path] = set()
+        for ext in _IMG_EXTENSIONS:
+            for img_path in folder_path.glob(ext):
+                if img_path not in seen:
+                    seen.add(img_path)
+                    samples.append((img_path, label))
     return samples
 
 
