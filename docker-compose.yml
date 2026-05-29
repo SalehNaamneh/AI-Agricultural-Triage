@@ -1,19 +1,37 @@
 version: "3.9"
 
-# EC2 deployment — pulls pre-built images from Docker Hub (no GPU required)
+# Local development — builds images from source (requires GPU for image-analyzer and agent)
 # Usage:
-#   docker compose -f docker-compose.ec2.yml pull
-#   docker compose -f docker-compose.ec2.yml up -d
+#   docker compose up --build
 
 services:
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Layer1/Dockerfile
+    container_name: agritriage-frontend
+    ports:
+      - "7860:7860"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RAG_URL=http://agritriage-rag:8000
+      - IMAGE_ANALYZER_URL=http://agritriage-image-analyzer:8002
+      - N8N_WEBHOOK_URL=http://agritriage-n8n:5678/webhook/agritriage
+    restart: unless-stopped
+    depends_on:
+      - rag
+      - image-analyzer
+
   rag:
-    image: salehnaa/agritriage-rag:latest
+    build:
+      context: .
+      dockerfile: Layer3/RAG/Dockerfile
     container_name: agritriage-rag
     ports:
       - "8000:8000"
     volumes:
-      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
+      - ./Layer3/RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
     environment:
       - PYTHONUNBUFFERED=1
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
@@ -29,18 +47,24 @@ services:
       start_period: 20s
 
   agent:
-    image: salehnaa/agritriage-agent:latest
+    build:
+      context: .
+      dockerfile: Layer3/agent/Dockerfile
     container_name: agritriage-agent
     ports:
       - "8001:8001"
     volumes:
-      - ./RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
-      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
+      - ./Layer3/RAG/chroma_db:/workspace/Layer3/RAG/chroma_db
+      - ./Layer3/ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
     environment:
       - PYTHONUNBUFFERED=1
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - OLLAMA_MODEL=llama3.1
     restart: unless-stopped
+    depends_on:
+      - rag
+      - image-analyzer
+      - guardrails
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -49,9 +73,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   guardrails:
-    image: salehnaa/agritriage-guardrails:latest
+    build:
+      context: .
+      dockerfile: Layer3/guardrails/Dockerfile
     container_name: agritriage-guardrails
     ports:
       - "8003:8003"
@@ -66,12 +99,14 @@ services:
       start_period: 10s
 
   image-analyzer:
-    image: salehnaa/agritriage-image-analyzer:latest
+    build:
+      context: .
+      dockerfile: Layer3/ImageAnalyzer/Dockerfile
     container_name: agritriage-image-analyzer
     ports:
       - "8002:8002"
     volumes:
-      - ./ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
+      - ./Layer3/ImageAnalyzer/models:/workspace/Layer3/ImageAnalyzer/models:ro
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
@@ -81,3 +116,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

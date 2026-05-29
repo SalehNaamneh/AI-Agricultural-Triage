@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 import requests
 import gradio as gr
@@ -8,9 +9,9 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from crop_config import load_all_crops, CropConfig
 
-RAG_URL            = "http://localhost:8000"
-IMAGE_ANALYZER_URL = "http://localhost:8002"
-N8N_WEBHOOK_URL    = "http://localhost:5678/webhook/agritriage"
+RAG_URL            = os.getenv("RAG_URL",            "http://localhost:8000")
+IMAGE_ANALYZER_URL = os.getenv("IMAGE_ANALYZER_URL", "http://localhost:8002")
+N8N_WEBHOOK_URL    = os.getenv("N8N_WEBHOOK_URL",    "http://localhost:5678/webhook/agritriage")
 
 ALL_CROPS = load_all_crops()
 DEFAULT_CROP = next(iter(ALL_CROPS)) if ALL_CROPS else None
