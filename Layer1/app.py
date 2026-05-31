@@ -219,7 +219,7 @@ def respond(message, history: list, crop_id: str) -> tuple:
 
     try:
         rag_question = rag_prefix + query
-        r       = requests.post(f"{RAG_URL}/ask", json={"question": rag_question}, timeout=90)
+        r       = requests.post(f"{RAG_URL}/ask", json={"question": rag_question}, timeout=300)
         data    = r.json()
         answer  = data.get("answer", "לא התקבלה תשובה.")
         sources = data.get("sources", [])
