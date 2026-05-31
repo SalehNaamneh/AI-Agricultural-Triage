@@ -38,7 +38,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - OLLAMA_MODEL=llama3.2:1b
+      - OLLAMA_MODEL=llama3.2:3b
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
