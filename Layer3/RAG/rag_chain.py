@@ -12,7 +12,7 @@ LLM_PROVIDER    = os.getenv("LLM_PROVIDER",    "ollama")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "llama3.1")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OPENAI_MODEL    = os.getenv("OPENAI_MODEL",    "gpt-4o")
-GEMINI_MODEL    = os.getenv("GEMINI_MODEL",    "gemini-1.5-pro")
+GEMINI_MODEL    = os.getenv("GEMINI_MODEL",    "gemini-2.0-flash")
 
 SYSTEM_PROMPT = """אתה עוזר חקלאי מומחה המתמחה במחלות גידולים חקלאיים וטיפולים בהן.
 ענה תמיד בעברית בלבד, גם אם השאלה נשאלת באנגלית.
